@@ -720,7 +720,7 @@ export const handleMailListQuery = async (
     const { results } = await c.env.DB.prepare(resultsQuery).bind(
         ...params, limit, offset
     ).all();
-    const resolvedResults = await resolveRawEmailList(results);
+    const resolvedResults = await resolveRawEmailList(results, c.env.R2);
     const count = offset == 0 ? await c.env.DB.prepare(
         countQuery
     ).bind(...params).first("count") : 0;

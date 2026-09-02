@@ -30,6 +30,8 @@ export const storeRawMail = async (
 ): Promise<D1Result> => {
     const gzipEnabled = getBooleanValue(env.ENABLE_MAIL_GZIP);
     const readStatusEnabled = getBooleanValue(env.ENABLE_MAIL_READ_STATUS);
+    const r2Enabled = env.R2 && (env.ENABLE_R2_STORAGE === undefined || getBooleanValue(env.ENABLE_R2_STORAGE));
+
     const requiredColumns: string[] = [];
     if (gzipEnabled) requiredColumns.push('raw_blob');
     if (readStatusEnabled) requiredColumns.push('is_unread');
@@ -37,6 +39,34 @@ export const storeRawMail = async (
     let tableColumns = new Set<string>();
     if (requiredColumns.length > 0) {
         tableColumns = await getRawMailTableColumns(env, requiredColumns);
+    }
+
+    // Try saving to R2 if available and enabled
+    if (r2Enabled && env.R2) {
+        try {
+            const timestamp = Date.now();
+            const randomSuffix = Math.random().toString(36).substring(2, 10);
+            const r2Key = `mails/${address}/${timestamp}_${randomSuffix}.eml`;
+            await env.R2.put(r2Key, raw, {
+                customMetadata: {
+                    source: source || '',
+                    address: address || '',
+                    messageId: messageId || '',
+                }
+            });
+            const r2RawPointer = `r2:${r2Key}`;
+            const storeUnreadStatus = readStatusEnabled && tableColumns.has('is_unread');
+            if (!storeUnreadStatus) {
+                return env.DB.prepare(
+                    `INSERT INTO raw_mails (source, address, raw, message_id) VALUES (?, ?, ?, ?)`
+                ).bind(source, address, r2RawPointer, messageId).run();
+            }
+            return env.DB.prepare(
+                `INSERT INTO raw_mails (source, address, raw, message_id, is_unread) VALUES (?, ?, ?, ?, 1)`
+            ).bind(source, address, r2RawPointer, messageId).run();
+        } catch (error) {
+            console.error("Failed to store mail in R2, falling back to D1 storage", error);
+        }
     }
 
     let rawBlob: ArrayBuffer | undefined;

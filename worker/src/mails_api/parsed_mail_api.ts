@@ -45,7 +45,7 @@ const getParsedMail = async (c: Context<HonoCustomType>) => {
         `SELECT * FROM raw_mails where id = ? and address = ?`
     ).bind(mail_id, address).first();
     if (!row) return c.json(null);
-    const resolved = await resolveRawEmailRow(row);
+    const resolved = await resolveRawEmailRow(row, c.env.R2);
     return c.json(await toParsedMailRow(resolved as Record<string, unknown>));
 };
 

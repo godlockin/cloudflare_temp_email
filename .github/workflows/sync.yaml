@@ -2,17 +2,49 @@ name: Upstream Sync
 
 on:
   schedule:
-    - cron: "0 0 * * 1"
+    - cron: "0 0 * * *" # Daily at 00:00 UTC
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   sync_latest_from_upstream:
-    name: Sync latest commits from upstream repo
+    name: Sync and Merge latest from upstream
     runs-on: ubuntu-latest
-    if: ${{ github.event.repository.fork }}
 
     steps:
-      - name: Sync upstream changes
-        run: gh repo sync ${{ github.repository }} --source dreamhunter2333/cloudflare_temp_email --branch main
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch and Merge upstream
+        run: |
+          git remote add upstream https://github.com/dreamhunter2333/cloudflare_temp_email.git || true
+          git fetch upstream main
+          
+          # Check if there are new commits
+          LOCAL_COMMIT=$(git rev-parse HEAD)
+          UPSTREAM_COMMIT=$(git rev-parse upstream/main)
+          
+          if [ "$LOCAL_COMMIT" = "$UPSTREAM_COMMIT" ]; then
+            echo "Already up to date with upstream."
+            exit 0
+          fi
+
+          echo "Merging upstream/main into current branch..."
+          git merge upstream/main -m "chore(sync): merge upstream changes" || {
+            echo "Merge conflict detected. Please resolve manually."
+            exit 1
+          }
+
+          echo "Pushing merged changes to fork repository..."
+          git push origin main
+

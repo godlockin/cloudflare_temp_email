@@ -82,45 +82,64 @@ async function email(message: ForwardableEmailMessage, env: Bindings, ctx: Execu
     // forward email
     await forwardEmail(message, env);
 
-    // AI email content extraction
-    const aiExtractResult = await extractEmailInfo(parsedEmailContext, env, message_id, toAddress);
-
-    // send email to telegram
-    try {
-        await sendMailToTelegram(
-            { env: env } as Context<HonoCustomType>,
-            toAddress, parsedEmailContext, message_id, aiExtractResult);
-    } catch (error) {
-        console.error("send mail to telegram error", error);
-    }
-
-    // send webhook
-    try {
-        await triggerWebhook(
-            { env: env } as Context<HonoCustomType>,
-            toAddress, parsedEmailContext, message_id, aiExtractResult
-        );
-    } catch (error) {
-        console.error("send webhook error", error);
-    }
-
-    // trigger another worker
-    try {
-        const parsedEmail = (await commonParseMail(parsedEmailContext));
-        const parsedText = parsedEmail?.text ?? ""
-        const rpcEmail: RPCEmailMessage = {
-            from: message.from,
-            to: toAddress,
-            rawEmail: rawEmail,
-            headers: message.headers
-        }
-        await triggerAnotherWorker({ env: env } as Context<HonoCustomType>, rpcEmail, parsedText);
-    } catch (error) {
-        console.error("trigger another worker error", error);
-    }
-
     // auto reply email
     await auto_reply(message, env, toAddress);
+
+    // Run asynchronous side effects (AI extraction, Telegram, Webhook, RPC) via ctx.waitUntil
+    const runSideEffects = async () => {
+        let aiExtractResult: ExtractResult | null = null;
+        try {
+            aiExtractResult = await extractEmailInfo(parsedEmailContext, env, message_id, toAddress);
+        } catch (error) {
+            console.error("AI email content extraction error", error);
+        }
+
+        const tasks = [
+            (async () => {
+                try {
+                    await sendMailToTelegram(
+                        { env: env } as Context<HonoCustomType>,
+                        toAddress, parsedEmailContext, message_id, aiExtractResult
+                    );
+                } catch (error) {
+                    console.error("send mail to telegram error", error);
+                }
+            })(),
+            (async () => {
+                try {
+                    await triggerWebhook(
+                        { env: env } as Context<HonoCustomType>,
+                        toAddress, parsedEmailContext, message_id, aiExtractResult
+                    );
+                } catch (error) {
+                    console.error("send webhook error", error);
+                }
+            })(),
+            (async () => {
+                try {
+                    const parsedEmail = await commonParseMail(parsedEmailContext);
+                    const parsedText = parsedEmail?.text ?? "";
+                    const rpcEmail: RPCEmailMessage = {
+                        from: message.from,
+                        to: toAddress,
+                        rawEmail: rawEmail,
+                        headers: message.headers
+                    };
+                    await triggerAnotherWorker({ env: env } as Context<HonoCustomType>, rpcEmail, parsedText);
+                } catch (error) {
+                    console.error("trigger another worker error", error);
+                }
+            })()
+        ];
+
+        await Promise.allSettled(tasks);
+    };
+
+    if (ctx && typeof ctx.waitUntil === 'function') {
+        ctx.waitUntil(runSideEffects());
+    } else {
+        await runSideEffects();
+    }
 }
 
 export { email }

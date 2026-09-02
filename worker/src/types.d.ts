@@ -21,12 +21,14 @@ type Bindings = {
     // bindings
     DB: D1Database
     KV: KVNamespace
+    R2?: R2Bucket
     RATE_LIMITER: RateLimit
     SEND_MAIL: SendEmail
     ASSETS: Fetcher
     AI: Ai
 
     // config
+    ENABLE_R2_STORAGE: string | boolean | undefined
     DEFAULT_LANG: string | undefined
     TITLE: string | undefined
     ANNOUNCEMENT: string | undefined | null

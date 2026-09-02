@@ -189,3 +189,9 @@ database_id = "xxx"
 # [[services]]
 # binding = "AUTH_INBOX"
 # service = "auth-inbox"
+
+# Optional Cloudflare R2 Object Storage binding for raw emails & attachments
+# [[r2_buckets]]
+# binding = "R2"
+# bucket_name = "your-temp-mail-bucket"
+

@@ -1,5 +1,5 @@
 /**
- * Gzip compression/decompression utilities for D1 BLOB storage.
+ * Gzip compression/decompression utilities for D1 BLOB / R2 storage.
  * Uses Web Standard CompressionStream/DecompressionStream (native in CF Workers).
  */
 
@@ -16,9 +16,22 @@ export async function decompressBlob(buffer: ArrayBuffer): Promise<string> {
 }
 
 /**
- * Resolve the raw email text from either raw_blob (gzip) or raw (plaintext) field.
+ * Resolve the raw email text from either R2, raw_blob (gzip) or raw (plaintext) field.
  */
-export async function resolveRawEmail(row: RawMailRow): Promise<string> {
+export async function resolveRawEmail(row: RawMailRow, r2Bucket?: R2Bucket): Promise<string> {
+    if (row.raw && row.raw.startsWith('r2:')) {
+        const r2Key = row.raw.substring(3);
+        if (r2Bucket) {
+            try {
+                const object = await r2Bucket.get(r2Key);
+                if (object) {
+                    return await object.text();
+                }
+            } catch (e) {
+                console.error("fetch from R2 failed", e);
+            }
+        }
+    }
     if (row.raw_blob) {
         try {
             // D1 returns BLOB as Array<number>, convert to ArrayBuffer for decompression
@@ -32,10 +45,10 @@ export async function resolveRawEmail(row: RawMailRow): Promise<string> {
 }
 
 /**
- * Resolve a single row: decompress raw_blob if present, strip raw_blob from result.
+ * Resolve a single row: decompress raw_blob or fetch from R2 if present, strip raw_blob from result.
  */
-export async function resolveRawEmailRow(row: RawMailRow): Promise<RawMailRow> {
-    const raw = await resolveRawEmail(row);
+export async function resolveRawEmailRow(row: RawMailRow, r2Bucket?: R2Bucket): Promise<RawMailRow> {
+    const raw = await resolveRawEmail(row, r2Bucket);
     const { raw_blob: _, ...rest } = row;
     return { ...rest, raw };
 }
@@ -43,6 +56,7 @@ export async function resolveRawEmailRow(row: RawMailRow): Promise<RawMailRow> {
 /**
  * Batch resolve raw emails for list queries using Promise.all.
  */
-export async function resolveRawEmailList(rows: RawMailRow[]): Promise<RawMailRow[]> {
-    return Promise.all(rows.map(row => resolveRawEmailRow(row)));
+export async function resolveRawEmailList(rows: RawMailRow[], r2Bucket?: R2Bucket): Promise<RawMailRow[]> {
+    return Promise.all(rows.map(row => resolveRawEmailRow(row, r2Bucket)));
 }
+
