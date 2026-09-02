@@ -34,6 +34,8 @@ jobs:
           echo "${{ secrets.FRONTEND_ENV }}" > .env.prod
           pnpm install --no-frozen-lockfile
           export frontend_branch="${{ secrets.FRONTEND_BRANCH }}"
+          # Automatically create Pages project if it doesn't exist
+          npx wrangler pages project create "$FRONTEND_NAME" --production-branch="${frontend_branch:-production}" || true
           if [ -n "$frontend_branch" ]; then
             echo "Deploying branch $frontend_branch"
             pnpm run deploy:actions --project-name=$FRONTEND_NAME --branch $frontend_branch
