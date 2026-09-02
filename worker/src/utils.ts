@@ -300,10 +300,19 @@ export const getPasswords = (c: Context<HonoCustomType>): string[] => {
     // check if PASSWORDS is an array, if not use json.parse
     if (!Array.isArray(c.env.PASSWORDS)) {
         try {
-            const res = JSON.parse(c.env.PASSWORDS) as string[];
-            return res.filter((item) => item.length > 0);
-        } catch (e) {
-            console.error("Failed to parse PASSWORDS", e);
+            const parsed = JSON.parse(c.env.PASSWORDS);
+            if (Array.isArray(parsed)) {
+                return parsed.filter((item) => typeof item === 'string' && item.length > 0);
+            }
+            if (typeof parsed === 'string' && parsed.length > 0) {
+                return [parsed];
+            }
+        } catch {
+            // Fallback: treat raw string as a single password
+            const rawStr = String(c.env.PASSWORDS).trim();
+            if (rawStr.length > 0) {
+                return [rawStr];
+            }
             return [];
         }
     }
@@ -317,10 +326,19 @@ export const getAdminPasswords = (c: Context<HonoCustomType>): string[] => {
     // check if ADMIN_PASSWORDS is an array, if not use json.parse
     if (!Array.isArray(c.env.ADMIN_PASSWORDS)) {
         try {
-            const res = JSON.parse(c.env.ADMIN_PASSWORDS) as string[];
-            return res.filter((item) => item.length > 0);
-        } catch (e) {
-            console.error("Failed to parse ADMIN_PASSWORDS", e);
+            const parsed = JSON.parse(c.env.ADMIN_PASSWORDS);
+            if (Array.isArray(parsed)) {
+                return parsed.filter((item) => typeof item === 'string' && item.length > 0);
+            }
+            if (typeof parsed === 'string' && parsed.length > 0) {
+                return [parsed];
+            }
+        } catch {
+            // Fallback: treat raw string as a single admin password
+            const rawStr = String(c.env.ADMIN_PASSWORDS).trim();
+            if (rawStr.length > 0) {
+                return [rawStr];
+            }
             return [];
         }
     }

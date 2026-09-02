@@ -459,14 +459,16 @@ export const newAddress = async (
                 address_id: address_id,
             }
         } catch (e) {
-            const message = (e as Error).message;
-            if (message && message.includes("UNIQUE")) {
+            const err = e as Error;
+            console.error("Failed to create newAddress error details:", err);
+            const message = err?.message || '';
+            if (message.includes("UNIQUE")) {
                 if (enableRandomSubdomain && attempt < maxAttempts - 1) {
                     continue;
                 }
-                throw new Error(msgs.AddressAlreadyExistsMsg)
+                throw new Error(msgs.AddressAlreadyExistsMsg);
             }
-            throw new Error(msgs.FailedCreateAddressMsg)
+            throw new Error(err?.message || msgs.FailedCreateAddressMsg);
         }
     }
 

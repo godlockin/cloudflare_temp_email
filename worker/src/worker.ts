@@ -303,7 +303,21 @@ app.all('/*', async c => c.text("Not Found", 404))
 
 
 export default {
-	fetch: app.fetch,
+	fetch: async (request: Request, env: Bindings, ctx: ExecutionContext) => {
+		try {
+			return await app.fetch(request, env, ctx);
+		} catch (e: unknown) {
+			const err = e as Error;
+			console.error("Critical worker fetch error:", err);
+			return new Response(`Worker Fatal Error: ${err?.stack || err?.message || String(e)}`, {
+				status: 500,
+				headers: {
+					"Content-Type": "text/plain; charset=utf-8",
+					"Access-Control-Allow-Origin": "*"
+				}
+			});
+		}
+	},
 	email: email,
 	scheduled: scheduled,
 }
