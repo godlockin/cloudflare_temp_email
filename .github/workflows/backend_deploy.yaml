@@ -57,6 +57,9 @@ jobs:
           
           pnpm install --no-frozen-lockfile
 
+          # Auto-initialize or patch D1 database schema if needed
+          npx wrangler d1 execute temp_email_db --remote --file=../db/schema.sql -y || true
+
           if [ -n "$use_mail_wasm_parser" ]; then
             echo "Using mail-parser-wasm-worker"
             pnpm add mail-parser-wasm-worker
