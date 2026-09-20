@@ -1,6 +1,9 @@
 import { LocaleMessages } from "./type";
 
 const messages: LocaleMessages = {
+    InvalidRequestBodyMsg: "无效的请求体",
+    InvalidMailIdMsg: "无效的邮件 ID",
+    MailNotFoundMsg: "邮件不存在",
     CustomAuthPasswordMsg: "你已启用私有站点密码,请提供密码",
     UserTokenExpiredMsg: "您的令牌已过期, 请重新登录",
     UserAcceesTokenExpiredMsg: "您的访问令牌已过期, 请刷新页面",
@@ -21,6 +24,10 @@ const messages: LocaleMessages = {
     InvalidAddressMsg: "无效的邮箱地址",
     InvalidAddressCredentialMsg: "无效的邮箱地址凭据",
     UserDeleteEmailDisabledMsg: "用户删除邮箱/邮件已禁用, 请联系管理员",
+
+    RedeemCodeUnavailableMsg: "兑换码无效、已使用或已过期",
+    RedeemCodeInvalidMsg: "兑换码配置无效",
+    RedeemRoleConflictMsg: "当前用户已有其他角色，无法兑换",
 
     UserNotFoundMsg: "用户不存在",
     UserAlreadyExistsMsg: "用户已存在, 请登录",
@@ -84,6 +91,7 @@ const messages: LocaleMessages = {
     EnableSendMailForDomainMsg: "请先为此域名启用 SEND_MAIL",
     InvalidCleanupConfigMsg: "无效的 cleanType 或 cleanDays",
     InvalidCleanTypeMsg: "无效的 cleanType",
+    CleanupFailedMsg: "清理失败，请检查清理配置；禁用地址活跃时间更新时，无法按不活跃时间清理。",
     EnableKVForMailVerifyMsg: "如果要启用邮件验证，请先启用 KV",
     VerifyMailDomainInvalidMsg: "验证邮件发送者域名必须在",
     InvalidMaxAddressCountMsg: "无效的 maxAddressCount",

@@ -13,6 +13,8 @@
 | `ENABLE_USER_CREATE_EMAIL` | Text/JSON   | Whether to allow users to create mailboxes, disabled if not configured | `true`                               |
 | `ENABLE_USER_DELETE_EMAIL` | Text/JSON   | Whether to allow users to delete emails, disabled if not configured    | `true`                               |
 | `ENABLE_MAIL_READ_STATUS` | Text/JSON | Enables read/unread mail state. Upgrade the database schema before enabling | `true` |
+| `ENABLE_REDEEM_CODE` | Text/JSON | Enables the redemption page, public redemption APIs, and Admin redemption management; disabled by default | `true` |
+| `REDEEM_CODE_URL` | Text | External URL for obtaining redemption codes; the link is hidden when unset | `https://example.com/redeem-codes` |
 
 > [!IMPORTANT] `DOMAINS` and `DEFAULT_DOMAINS` must already be set up in Cloudflare
 > Every domain you put here (including `DEFAULT_DOMAINS`, `USER_ROLES.domains`, `RANDOM_SUBDOMAIN_DOMAINS` further below) **must already have Cloudflare Email Routing enabled and its email DNS records provisioned**. After the Worker is deployed, bind the domain's Catch-all rule to that Worker; otherwise inbound mail will never reach the Worker.
@@ -36,6 +38,7 @@ When `ADMIN_API_IP_WHITELIST` is unset or empty, source IPs are not restricted. 
 | `MIN_ADDRESS_LEN`                     | Number    | Minimum length of `email address` name                                                                                                                                                                            | `1`                                       |
 | `MAX_ADDRESS_LEN`                     | Number    | Maximum length of `email address` name                                                                                                                                                                            | `30`                                      |
 | `DISABLE_CUSTOM_ADDRESS_NAME`         | Text/JSON | Disable custom email address names, if set to true, users cannot enter custom names and they will be auto-generated                                                                                               | `true`                                    |
+| `DISABLE_ADDRESS_UPDATED_AT` | Text/JSON | Defaults to `false`. Set to `true` to stop individual and user-wide address activity keep-alive updates and disable built-in manual and scheduled inactive-address cleanup. Initial address timestamps, password operations, and other cleanup rules remain unchanged | `true` |
 | `ADDRESS_CHECK_REGEX`                 | Text      | Regular expression for `email address` name, used for validation only                                                                                                                                             | `^(?!.*admin).*`                          |
 | `ADDRESS_REGEX`                       | Text      | Regular expression to replace illegal symbols in `email address` name, symbols not in the regex will be replaced. Default is `[^a-z0-9]` if not set. Use with caution as some symbols may prevent email reception | `[^a-z0-9]`                               |
 | `DEFAULT_DOMAINS`                     | JSON      | Default domains available to users (not logged in or users without assigned roles)                                                                                                                                | `["awsl.uk", "dreamhunter2333.xyz"]`      |
@@ -125,6 +128,7 @@ When `ADMIN_API_IP_WHITELIST` is unset or empty, source IPs are not restricted. 
 | ---------------- | --------- | ------------------------------------------------- | ------------------ |
 | `ENABLE_WEBHOOK` | Text/JSON | Whether to enable webhook                         | `true`             |
 | `FRONTEND_URL`   | Text      | Frontend URL, used for sending webhook email URLs | `https://xxxx.xxx` |
+| `BACKEND_URL` | Text | Public backend base URL for signed attachment links; attachment URLs are empty when unset | `https://temp-email-api.example.com` |
 
 > [!NOTE]
 > Webhook functionality requires email parsing, free tier CPU is limited, may cause large email parsing timeout
